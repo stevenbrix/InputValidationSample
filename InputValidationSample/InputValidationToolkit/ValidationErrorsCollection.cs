@@ -1,6 +1,6 @@
 ﻿using System;
 using Windows.Foundation.Collections;
-using Windows.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls;
 using System.Collections.Specialized;
 
 namespace InputValidationSample.InputValidationToolkit

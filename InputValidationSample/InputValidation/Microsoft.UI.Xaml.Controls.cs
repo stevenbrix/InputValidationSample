@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation.Collections;
 
-namespace Windows.UI.Xaml.Controls
+namespace Microsoft.UI.Xaml.Controls
 {
     /// <summary>
     /// Name of the property that is associated with user input.
@@ -57,7 +57,7 @@ namespace Windows.UI.Xaml.Controls
         /// <summary>
         ///  DataTemplate that expresses how the errors are displayed.
         /// </summary>
-        DataTemplate ErrorTemplate { get; set; }
+        Windows.UI.Xaml.DataTemplate ErrorTemplate { get; set; }
         /// <summary>
         ///  Determines how the control should visualize validation errors.
         /// </summary>
@@ -67,20 +67,19 @@ namespace Windows.UI.Xaml.Controls
         /// information.
         /// </summary>
         InputValidationCommand ValidationCommand { get; set; }
+
     };
-
-
 
     /// <summary>
     /// Command that controls how an IInputValidationControl does validation.
     /// </summary>
     public class InputValidationCommand
     {
-        Windows.UI.Xaml.Controls.InputValidationKind InputValidationKind;
+        Microsoft.UI.Xaml.Controls.InputValidationKind InputValidationKind;
         /// <summary>
         /// Called by a control to determine if it should call the Validate method.
         /// </summary>
-        public bool CanValidate(Windows.UI.Xaml.Controls.IInputValidationControl validationControl)
+        public bool CanValidate(Microsoft.UI.Xaml.Controls.IInputValidationControl validationControl)
         {
             return CanValidateCore(validationControl);
         }
@@ -88,14 +87,14 @@ namespace Windows.UI.Xaml.Controls
         /// If CanValidate returns true, Validate is invoked to perform validation on the
         /// validationControl provided.
         /// </summary>
-        public void Validate(Windows.UI.Xaml.Controls.IInputValidationControl validationControl)
+        public void Validate(Microsoft.UI.Xaml.Controls.IInputValidationControl validationControl)
         {
             ValidateCore(validationControl);
         }
         /// <summary>
         /// Method that derived classes implement to provide their own implementation of the CanValidate method.
         /// </summary>
-        public virtual bool CanValidateCore(Windows.UI.Xaml.Controls.IInputValidationControl validationControl)
+        public virtual bool CanValidateCore(Microsoft.UI.Xaml.Controls.IInputValidationControl validationControl)
         {
             // Validate only when we have errors
             return validationControl.ValidationErrors.Count > 0;
@@ -103,7 +102,7 @@ namespace Windows.UI.Xaml.Controls
         /// <summary>
         /// Method that derived classes implement to provide their own implementation of the Validate method.
         /// </summary>
-        public virtual void ValidateCore(Windows.UI.Xaml.Controls.IInputValidationControl validationControl)
+        public virtual void ValidateCore(Microsoft.UI.Xaml.Controls.IInputValidationControl validationControl)
         {
             foreach (var attr in validationControl.GetType().GetCustomAttributes(true))
             {
@@ -131,7 +130,7 @@ namespace Windows.UI.Xaml.Controls
     /// </summary>
     public class InputValidationError
     {
-        InputValidationError(string errorMessage)
+        public InputValidationError(string errorMessage)
         {
             ErrorMessage = errorMessage;
         }

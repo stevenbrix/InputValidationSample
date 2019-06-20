@@ -1,121 +1,158 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Windows.UI.Xaml.Controls;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
-using System.Collections.ObjectModel;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.WindowsRuntime;
+using Microsoft.UI.Xaml.Controls;
+using Windows.UI.Xaml.Controls;
+
 
 namespace InputValidationSample.InputValidationToolkit
 {
     /// <summary>
     /// This is a helper class that is intended to provide all the functionality for a control that implements InputValidation
     /// </summary>
-    interface IInputValidationControlTemplateAccessor
+    public class ValidationService
     {
-        ContentPresenter GetErrorPresenter();
-        ContentPresenter GetDescriptionPresenter();
-    }
-    /// <summary>
-    /// This is a helper class that is intended to provide all the functionality for a control that implements InputValidation
-    /// </summary>
-    public class ValidationService : IInputValidationControl
-    {
-        WeakReference<IInputValidationControl> _owner;
+        readonly WeakReference<IInputValidationControl> _owner;
 
         public ValidationService(IInputValidationControl control)
         {
-            _owner.SetTarget(control);
+            _owner = new WeakReference<IInputValidationControl>(control);
+            control.ValidationErrors.VectorChanged += ValidationErrors_VectorChanged;
+            if (control is IInputValidationControlNotify validationControlNotify)
+            {
+                validationControlNotify.ErrorTemplateChanged += ValidationControlNotify_ErrorTemplateChanged;
+                validationControlNotify.InputValidationKindChanged += ValidationControlNotify_InputValidationKindChanged;
+                validationControlNotify.ValidationCommandChanged += ValidationControlNotify_ValidationCommandChanged;
+                validationControlNotify.ValidationContextChanged += ValidationControlNotify_ValidationContextChanged;
+            }
         }
 
-        public IObservableVector<InputValidationError> ValidationErrors => new InputValidationErrorsCollection();
-
-        public InputValidationContext ValidationContext { get; set; }
-
-        DataTemplate _errorTemplate;
-        public DataTemplate ErrorTemplate
+        private void ValidationControlNotify_ValidationContextChanged(IInputValidationControl sender, ValidationContextChangedEventArgs args)
         {
-            get => _errorTemplate;
-            set
+            UpdateErrorVisuals(sender);
+        }
+
+        private void ValidationControlNotify_ValidationCommandChanged(IInputValidationControl sender, ValidationCommandChangedEventArgs args)
+        {
+            UpdateErrorVisuals(sender);
+        }
+
+        private void ValidationControlNotify_InputValidationKindChanged(IInputValidationControl sender, InputValidationKindChangedEventArgs args)
+        {
+            UpdateErrorVisuals(sender);
+        }
+
+        private void ValidationControlNotify_ErrorTemplateChanged(IInputValidationControl sender, ErrorTemplateChangedEventArgs args)
+        {
+            UpdateErrorVisuals(sender);
+        }
+
+        private void ValidationErrors_VectorChanged(IObservableVector<InputValidationError> sender, IVectorChangedEventArgs args)
+        {
+            if (_owner.TryGetTarget(out IInputValidationControl target))
             {
-                _errorTemplate = value;
-                if (_owner.TryGetTarget(out IInputValidationControl target))
+                // Only update the error visuals when an important change in the collection occured. Otherwise the vector is bindable and so
+                // the ui will update automatically with these changes once they are already loaded.
+                bool updateVisuals = (args.CollectionChange == CollectionChange.Reset) ||
+                                     (args.CollectionChange == CollectionChange.ItemRemoved && target.ValidationErrors.Count == 0) ||
+                                     (args.CollectionChange == CollectionChange.ItemInserted && target.ValidationErrors.Count == 1);
+                if (updateVisuals)
                 {
                     UpdateErrorVisuals(target);
                 }
             }
         }
-
-        InputValidationKind _inputValidationKind;
-        public InputValidationKind InputValidationKind
-        {
-            get => _inputValidationKind;
-            set
-            {
-                _inputValidationKind = value;
-                if (_owner.TryGetTarget(out IInputValidationControl target))
-                {
-                    UpdateErrorVisuals(target);
-                }
-            }
-        }
-
-        InputValidationCommand _validationCommand;
-        public InputValidationCommand ValidationCommand
-        {
-            get => _validationCommand;
-            set
-            {
-                _validationCommand = value;
-                if (_owner.TryGetTarget(out IInputValidationControl target))
-                {
-                    UpdateErrorVisuals(target);
-                }
-            }
-        }
-
-
+   
         private void UpdateErrorVisuals(IInputValidationControl control)
         {
-            if (control is IInputValidationControlTemplateAccessor accessor)
+            ValidationVisualAction action = GetValidationVisualAction(control, out ContentPresenter errorPresenter);
+            if (action == ValidationVisualAction.LoadAndSetContent)
             {
-                var errorPresenter = accessor.GetErrorPresenter();
+                var loadedContent = (FrameworkElement)control.ErrorTemplate.LoadContent();
+                loadedContent.DataContext = control;
 
-                if (InputValidationKind != InputValidationKind.Hidden)
+                DependencyObject content = loadedContent;
+
+                // For compact errors we display to ErrorTemplate inside a tooltip
+                if (control.InputValidationKind == InputValidationKind.Compact || control.InputValidationKind == InputValidationKind.Auto)
                 {
-                    if (ErrorTemplate != null && errorPresenter != null)
+                    // Get the CompactErrorIconTemplate
+                    if (Application.Current.Resources["DefaultCompactErrorIconTemplate"] is DataTemplate iconTemplate)
                     {
-                        var loadedContent = (FrameworkElement)ErrorTemplate.LoadContent();
-                        loadedContent.DataContext = control;
-
-                        DependencyObject content = loadedContent;
-
-                        // For compact errors we display to ErrorTemplate inside a tooltip
-                        if (InputValidationKind == InputValidationKind.Compact || InputValidationKind == InputValidationKind.Auto)
-                        {
-                            // Get the CompactErrorIconTemplate
-                            var iconTemplate = Application.Current.Resources["DefaultCompactErrorIconTemplate"] as DataTemplate;
-                            if (iconTemplate != null)
-                            {
-                                var iconContent = iconTemplate.LoadContent();
-                                ToolTip toolTip = (ToolTip)ToolTipService.GetToolTip(iconContent);
-                                toolTip.Content = loadedContent;
-                                content = iconContent;
-                            }
-                        }
-
-                        errorPresenter.Content = content;
+                        var iconContent = iconTemplate.LoadContent();
+                        ToolTip toolTip = (ToolTip)ToolTipService.GetToolTip(iconContent);
+                        toolTip.Content = loadedContent;
+                        content = iconContent;
                     }
                 }
-                else if (errorPresenter != null)
+
+                errorPresenter.Content = content;
+            }
+            else if (action == ValidationVisualAction.Unload)
+            {
+                Windows.UI.Xaml.Markup.XamlMarkupHelper.UnloadObject(errorPresenter);
+            }
+        }
+
+        private void GoToValidationState(IInputValidationControl control)
+        {
+            if (control.InputValidationKind != InputValidationKind.Hidden)
+            {
+                VisualStateManager.GoToState((Control)control, "InlineValidat");
+            }
+        }
+
+        private ValidationVisualAction GetValidationVisualAction(IInputValidationControl control, out ContentPresenter errorPresenter)
+        {
+            ValidationVisualAction action = ValidationVisualAction.NoChange;
+            errorPresenter = FindNameInSubtree<ContentPresenter>(control, "ErrorPresenter");
+            if (errorPresenter != null)
+            {
+                if (control.InputValidationKind != InputValidationKind.Hidden && control.ValidationErrors.Count > 0 && control.ErrorTemplate != null)
                 {
-                    Windows.UI.Xaml.Markup.XamlMarkupHelper.UnloadObject(errorPresenter);
+                    action = ValidationVisualAction.LoadAndSetContent;
+                }
+                else if (control.InputValidationKind == InputValidationKind.Hidden || control.ValidationErrors.Count == 0 ||  control.ErrorTemplate == null)
+                {
+                    action = ValidationVisualAction.Unload;
                 }
             }
+              
+            return action;
+        }
+
+        private enum ValidationVisualAction
+        {
+            NoChange,
+            LoadAndSetContent,
+            Unload
+        }
+
+
+        private static T FindNameInSubtree<T>(IInputValidationControl element, string descendantName) where T: class
+        {
+            return FindNameInSubtreeWorker((DependencyObject)element, descendantName) as T;
+        }
+
+        private static FrameworkElement FindNameInSubtreeWorker(DependencyObject element, string descendantName)
+        {
+            if (element == null)
+                return null;
+
+            FrameworkElement frameworkElement = element as FrameworkElement;
+
+            if (frameworkElement?.Name == descendantName)
+                return frameworkElement;
+
+            int childrenCount = Windows.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(element);
+            for (int i = 0; i < childrenCount; i++)
+            {
+                var result = FindNameInSubtreeWorker(Windows.UI.Xaml.Media.VisualTreeHelper.GetChild(element, i), descendantName);
+                if (result != null)
+                    return result;
+            }
+
+            return null;
         }
     }
 }

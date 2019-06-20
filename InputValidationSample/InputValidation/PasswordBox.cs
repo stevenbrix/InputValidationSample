@@ -2,18 +2,20 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Windows.Foundation.Collections;
-using Windows.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls;
 using Windows.UI.Xaml;
 using InputValidationSample.InputValidationToolkit;
+using Windows.Foundation;
 
 namespace InputValidationSample.InputValidation
 {
     // Windows.UI.Xaml.Controls.PasswordBox is a sealed type so we'll just derive from TextBox. We won't do anything fancy for the sake of simplicity.
+    
     [InputProperty(Name = "Password")]
-    public class PasswordBox : Windows.UI.Xaml.Controls.TextBox, IInputValidationControl, IInputValidationControlTemplateAccessor
+    public class ValidateablePasswordBox : Windows.UI.Xaml.Controls.TextBox, IInputValidationControl, IInputValidationControlNotify
     {
 
-        public PasswordBox()
+        public ValidateablePasswordBox()
         {
             validationService = new ValidationService(this);
         }
@@ -22,32 +24,60 @@ namespace InputValidationSample.InputValidation
         public string Password
         {
             get { return (string)GetValue(PasswordProperty); }
+            set { SetValue(PasswordProperty, value); }
+        }
+        public static DependencyProperty PasswordProperty = DependencyProperty.Register("Password", typeof(string), typeof(ValidateablePasswordBox), null);
+        public IObservableVector<InputValidationError> ValidationErrors { get; } = new InputValidationErrorsCollection();
+
+        public InputValidationContext ValidationContext
+        {
+            get => (InputValidationContext)GetValue(ValidationContextProperty);
             set
             {
-                SetValue(PasswordProperty, value);
-                // Also update text
-                Text = value;
+                SetValue(ValidationContextProperty, value);
+                ValidationContextChanged?.Invoke(this, new ValidationContextChangedEventArgs());
             }
         }
-        public static DependencyProperty PasswordProperty = DependencyProperty.Register("Password", typeof(string), typeof(PasswordBox), null);
+        public DataTemplate ErrorTemplate
+        {
+            get => (DataTemplate)GetValue(ErrorTemplateProperty);
+            set
+            {
+                SetValue(ErrorTemplateProperty, value);
+                ErrorTemplateChanged?.Invoke(this, new ErrorTemplateChangedEventArgs());
+            }
+        }
+        public InputValidationKind InputValidationKind
+        {
+            get => (InputValidationKind)GetValue(InputValidationKindProperty);
+            set
+            {
+                SetValue(InputValidationKindProperty, value);
+                InputValidationKindChanged?.Invoke(this, new InputValidationKindChangedEventArgs());
+            }
+        }
+        public InputValidationCommand ValidationCommand
+        {
+            get => (InputValidationCommand)GetValue(ValidationCommandProperty);
+            set
+            {
+                SetValue(ValidationCommandProperty, value);
+                ValidationCommandChanged?.Invoke(this, new ValidationCommandChangedEventArgs());
+            }
+        }
 
-        public IObservableVector<InputValidationError> ValidationErrors => ((IInputValidationControl)validationService).ValidationErrors;
-
-        public InputValidationContext ValidationContext { get => ((IInputValidationControl)validationService).ValidationContext; set => ((IInputValidationControl)validationService).ValidationContext = value; }
-        public DataTemplate ErrorTemplate { get => ((IInputValidationControl)validationService).ErrorTemplate; set => ((IInputValidationControl)validationService).ErrorTemplate = value; }
-        public InputValidationKind InputValidationKind { get => ((IInputValidationControl)validationService).InputValidationKind; set => ((IInputValidationControl)validationService).InputValidationKind = value; }
-        public InputValidationCommand ValidationCommand { get => ((IInputValidationControl)validationService).ValidationCommand; set => ((IInputValidationControl)validationService).ValidationCommand = value; }
+        public static DependencyProperty ErrorTemplateProperty = DependencyProperty.Register("ErrorTemplate", typeof(DataTemplate), typeof(ValidateablePasswordBox), null);
+        public static DependencyProperty ValidationContextProperty = DependencyProperty.Register("ValidationContext", typeof(InputValidationContext), typeof(ValidateablePasswordBox), null);
+        public static DependencyProperty InputValidationKindProperty = DependencyProperty.Register("InputValidationKind", typeof(InputValidationKind), typeof(ValidateablePasswordBox), null);
+        public static DependencyProperty ValidationCommandProperty = DependencyProperty.Register("ValidationCommand", typeof(InputValidationCommand), typeof(ValidateablePasswordBox), null);
+        public static DependencyProperty ValidationErrorsProperty = DependencyProperty.Register("ValidationErrors", typeof(IObservableVector<InputValidationError>), typeof(ValidateablePasswordBox), null);
 
         ValidationService validationService;
 
-        public ContentPresenter GetDescriptionPresenter()
-        {
-            return (ContentPresenter)GetTemplateChild("DescriptionPresenter");
-        }
-
-        public ContentPresenter GetErrorPresenter()
-        {
-            return (ContentPresenter)GetTemplateChild("ErrorPresenter");
-        }
+        public event TypedEventHandler<IInputValidationControl, ValidationContextChangedEventArgs> ValidationContextChanged;
+        public event TypedEventHandler<IInputValidationControl, ErrorTemplateChangedEventArgs> ErrorTemplateChanged;
+        public event TypedEventHandler<IInputValidationControl, InputValidationKindChangedEventArgs> InputValidationKindChanged;
+        public event TypedEventHandler<IInputValidationControl, ValidationCommandChangedEventArgs> ValidationCommandChanged;
     }
+
 }
