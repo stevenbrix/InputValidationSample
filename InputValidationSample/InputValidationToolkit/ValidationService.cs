@@ -1,14 +1,53 @@
 ﻿using System;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls;
-
+using Windows.Foundation;
 
 namespace InputValidationSample.InputValidationToolkit
 {
     /// <summary>
+    /// Interface for ValidationService to listen to custom control events
+    /// <summary/>
+    public interface IInputValidationControlNotify
+    {
+        /// <summary>
+        /// Event to notify listeners when the ErrorTemplate property changes
+        /// </summary>
+        event TypedEventHandler<IInputValidationControl, ErrorTemplateChangedEventArgs> ErrorTemplateChanged;
+        /// <summary>
+        /// Event to notify listeners when the InputValidationKind property changes
+        /// </summary>
+        event TypedEventHandler<IInputValidationControl, InputValidationKindChangedEventArgs> InputValidationKindChanged;
+        /// <summary>
+        /// Event to notify listeners when the InputValidationMode property changes
+        /// </summary>
+        event TypedEventHandler<IInputValidationControl, InputValidationModeChangedEventArgs> InputValidationModeChanged;
+        /// <summary>
+        /// Event to notify listeners when the ValidationCommand property changes
+        /// </summary>
+        event TypedEventHandler<IInputValidationControl, ValidationCommandChangedEventArgs> ValidationCommandChanged;
+
+    };
+
+    public class ErrorTemplateChangedEventArgs : EventArgs { }
+    public class InputValidationKindChangedEventArgs : EventArgs { }
+    public class InputValidationModeChangedEventArgs : EventArgs { }
+    public class ValidationCommandChangedEventArgs : EventArgs { }
+
+
+    /// <summary>
     /// This is a helper class that is intended to provide all the functionality for a control that implements InputValidation
+    /// </summary>
+    public interface IInputValidationControlTemplateAccessor
+    {
+        ContentPresenter GetErrorPresenter();
+        ContentPresenter GetDescriptionPresenter();
+    }
+
+    /// <summary>
+    /// This is a helper class that is intended to provide all the functionality for a control that implements InputValidation.
+    /// It handles listening to the appropriate errors and ensuring that the visuals are displayed properly at all times.
     /// </summary>
     public class ValidationService
     {
@@ -17,55 +56,48 @@ namespace InputValidationSample.InputValidationToolkit
         public ValidationService(IInputValidationControl control)
         {
             _owner = new WeakReference<IInputValidationControl>(control);
-            control.ValidationErrors.VectorChanged += ValidationErrors_VectorChanged;
+            Register(control);
+        }
+
+        public static void Register(IInputValidationControl control)
+        {
+            control.HasValidationErrorsChanged += Control_HasValidationErrorsChanged;
             if (control is IInputValidationControlNotify validationControlNotify)
             {
-                validationControlNotify.ErrorTemplateChanged += ValidationControlNotify_ErrorTemplateChanged;
-                validationControlNotify.InputValidationKindChanged += ValidationControlNotify_InputValidationKindChanged;
-                validationControlNotify.ValidationCommandChanged += ValidationControlNotify_ValidationCommandChanged;
-                validationControlNotify.ValidationContextChanged += ValidationControlNotify_ValidationContextChanged;
+                validationControlNotify.ErrorTemplateChanged += ValidationControlNotify_PropertyChanged;
+                validationControlNotify.InputValidationKindChanged += ValidationControlNotify_PropertyChanged;
+                validationControlNotify.ValidationCommandChanged += ValidationControlNotify_PropertyChanged;
+                validationControlNotify.InputValidationModeChanged += ValidationControlNotify_PropertyChanged;
             }
         }
 
-        private void ValidationControlNotify_ValidationContextChanged(IInputValidationControl sender, ValidationContextChangedEventArgs args)
+        public static void Unregister(IInputValidationControl control)
         {
-            UpdateErrorVisuals(sender);
-        }
-
-        private void ValidationControlNotify_ValidationCommandChanged(IInputValidationControl sender, ValidationCommandChangedEventArgs args)
-        {
-            UpdateErrorVisuals(sender);
-        }
-
-        private void ValidationControlNotify_InputValidationKindChanged(IInputValidationControl sender, InputValidationKindChangedEventArgs args)
-        {
-            UpdateErrorVisuals(sender);
-        }
-
-        private void ValidationControlNotify_ErrorTemplateChanged(IInputValidationControl sender, ErrorTemplateChangedEventArgs args)
-        {
-            UpdateErrorVisuals(sender);
-        }
-
-        private void ValidationErrors_VectorChanged(IObservableVector<InputValidationError> sender, IVectorChangedEventArgs args)
-        {
-            if (_owner.TryGetTarget(out IInputValidationControl target))
+            control.HasValidationErrorsChanged -= Control_HasValidationErrorsChanged;
+            if (control is IInputValidationControlNotify validationControlNotify)
             {
-                // Only update the error visuals when an important change in the collection occured. Otherwise the vector is bindable and so
-                // the ui will update automatically with these changes once they are already loaded.
-                bool updateVisuals = (args.CollectionChange == CollectionChange.Reset) ||
-                                     (args.CollectionChange == CollectionChange.ItemRemoved && target.ValidationErrors.Count == 0) ||
-                                     (args.CollectionChange == CollectionChange.ItemInserted && target.ValidationErrors.Count == 1);
-                if (updateVisuals)
-                {
-                    UpdateErrorVisuals(target);
-                }
+                validationControlNotify.ErrorTemplateChanged -= ValidationControlNotify_PropertyChanged;
+                validationControlNotify.InputValidationKindChanged -= ValidationControlNotify_PropertyChanged;
+                validationControlNotify.ValidationCommandChanged -= ValidationControlNotify_PropertyChanged;
+                validationControlNotify.InputValidationModeChanged -= ValidationControlNotify_PropertyChanged;
             }
         }
-   
-        private void UpdateErrorVisuals(IInputValidationControl control)
+
+        private static void Control_HasValidationErrorsChanged(IInputValidationControl sender, HasValidationErrorsChangedEventArgs args)
+        {
+            UpdateErrorVisuals(sender);
+        }
+
+        private static void ValidationControlNotify_PropertyChanged(IInputValidationControl sender, EventArgs args)
+        {
+            UpdateErrorVisuals(sender);
+        }
+
+        private static void UpdateErrorVisuals(IInputValidationControl control)
         {
             ValidationVisualAction action = GetValidationVisualAction(control, out ContentPresenter errorPresenter);
+            GoToValidationStates(control);
+
             if (action == ValidationVisualAction.LoadAndSetContent)
             {
                 var loadedContent = (FrameworkElement)control.ErrorTemplate.LoadContent();
@@ -94,30 +126,38 @@ namespace InputValidationSample.InputValidationToolkit
             }
         }
 
-        private void GoToValidationState(IInputValidationControl control)
+        private static void GoToValidationStates(IInputValidationControl validationControl)
         {
-            if (control.InputValidationKind != InputValidationKind.Hidden)
+            if (validationControl is Control ctrl)
             {
-                VisualStateManager.GoToState((Control)control, "InlineValidat");
+                VisualStateManager.GoToState(ctrl, ValidationEnabledStates.GetState(validationControl), false);
+                if (ValidationErrorStates.TryGetState(validationControl, out string errorState))
+                {
+                    VisualStateManager.GoToState(ctrl, errorState, false);
+                }
             }
         }
 
-        private ValidationVisualAction GetValidationVisualAction(IInputValidationControl control, out ContentPresenter errorPresenter)
+        private static ValidationVisualAction GetValidationVisualAction(IInputValidationControl control, out ContentPresenter errorPresenter)
         {
             ValidationVisualAction action = ValidationVisualAction.NoChange;
-            errorPresenter = FindNameInSubtree<ContentPresenter>(control, "ErrorPresenter");
-            if (errorPresenter != null)
+            errorPresenter = null;
+            if (control is IInputValidationControlTemplateAccessor templateAccessor)
             {
-                if (control.InputValidationKind != InputValidationKind.Hidden && control.ValidationErrors.Count > 0 && control.ErrorTemplate != null)
+                errorPresenter = templateAccessor.GetErrorPresenter();
+                if (errorPresenter != null)
                 {
-                    action = ValidationVisualAction.LoadAndSetContent;
-                }
-                else if (control.InputValidationKind == InputValidationKind.Hidden || control.ValidationErrors.Count == 0 ||  control.ErrorTemplate == null)
-                {
-                    action = ValidationVisualAction.Unload;
+                    if (control.InputValidationMode != InputValidationMode.Disabled && control.ValidationErrors.Count > 0 && control.ErrorTemplate != null)
+                    {
+                        action = ValidationVisualAction.LoadAndSetContent;
+                    }
+                    else if (control.InputValidationMode == InputValidationMode.Disabled || control.ValidationErrors.Count == 0 || control.ErrorTemplate == null)
+                    {
+                        action = ValidationVisualAction.Unload;
+                    }
                 }
             }
-              
+
             return action;
         }
 
@@ -128,31 +168,63 @@ namespace InputValidationSample.InputValidationToolkit
             Unload
         }
 
-
-        private static T FindNameInSubtree<T>(IInputValidationControl element, string descendantName) where T: class
+        private static class ValidationEnabledStates
         {
-            return FindNameInSubtreeWorker((DependencyObject)element, descendantName) as T;
-        }
+            // VisualState names for when InputValidation is enabled
+            private const string Inline = "InlineValidationEnabled";
+            private const string Compact = "CompactValidationEnabled";
+            private const string Disabled = "ValidationDisabled";
 
-        private static FrameworkElement FindNameInSubtreeWorker(DependencyObject element, string descendantName)
-        {
-            if (element == null)
-                return null;
-
-            FrameworkElement frameworkElement = element as FrameworkElement;
-
-            if (frameworkElement?.Name == descendantName)
-                return frameworkElement;
-
-            int childrenCount = Windows.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(element);
-            for (int i = 0; i < childrenCount; i++)
+            // Retrieves the appropriate VisualState name for the control
+            public static string GetState(IInputValidationControl control)
             {
-                var result = FindNameInSubtreeWorker(Windows.UI.Xaml.Media.VisualTreeHelper.GetChild(element, i), descendantName);
-                if (result != null)
-                    return result;
+                if (control.InputValidationMode == InputValidationMode.Disabled)
+                {
+                    return Disabled;
+                }
+                else if (control.InputValidationKind == InputValidationKind.Inline)
+                {
+                    return Inline;
+                }
+                else
+                {
+                    return Compact;
+                }
             }
-
-            return null;
         }
+
+        private static class ValidationErrorStates
+        {
+            // VisualState names for when there are errors
+
+            private const string Inline= "InlineErrors";
+            private const string Compact = "CompactErrors";
+            private const string None = "ErrorsCleared";
+
+            // Tries to get the state name. Returns false if InputValidation is disabled and we
+            // shouldn't make the GoToState call.
+            public static bool TryGetState(IInputValidationControl control, out string state)
+            {
+                state = null;
+                if (control.InputValidationMode != InputValidationMode.Disabled)
+                {
+                    if (!control.HasValidationErrors)
+                    {
+                        state = None;
+                    }
+                    else if (control.InputValidationKind == InputValidationKind.Inline)
+                    {
+                        state = Inline;
+                    }
+                    else
+                    {
+                        state = Compact;
+                    }
+                    return true;
+                }
+                return false;
+            }
+        }
+
     }
 }

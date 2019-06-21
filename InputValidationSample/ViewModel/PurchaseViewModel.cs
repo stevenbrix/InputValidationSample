@@ -8,11 +8,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace InputValidationSample.ViewModel
 {
-    public class PurchaseViewModel : InputValidationSample.InputValidationToolkit.ValidationBase
+    public class PurchaseViewModel : InputValidationToolkit.ValidationBase
     {
         public PurchaseViewModel()
         {
         }
+
 
         private string _name;
 
@@ -108,6 +109,6 @@ namespace InputValidationSample.ViewModel
                     "Zip code must contain numbers only");
             }
         }
-
+     
     }
 }

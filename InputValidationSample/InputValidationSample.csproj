@@ -11,8 +11,8 @@
     <AssemblyName>InputValidationSample</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
-    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.17763.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -120,14 +120,15 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="InputValidationToolkit\FormControl.xaml.cs">
+      <DependentUpon>FormControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="InputValidationToolkit\FormSection.cs" />
+    <Compile Include="InputValidationToolkit\ValidateableControlBase.cs" />
     <Compile Include="InputValidationToolkit\ValidationBase.cs" />
-    <Compile Include="InputValidation\ComboBox.cs" />
-    <Compile Include="InputValidation\NotInSpec_Microsoft.UI.Xaml.Controls.cs" />
-    <Compile Include="InputValidation\PasswordBox.cs" />
-    <Compile Include="InputValidation\TextBox.cs" />
+    <Compile Include="InputValidationToolkit\ValidationCommand.cs" />
     <Compile Include="InputValidationToolkit\ValidationErrorsCollection.cs" />
     <Compile Include="InputValidationToolkit\ValidationService.cs" />
-    <Compile Include="InputValidation\Microsoft.UI.Xaml.Controls.cs" />
     <Compile Include="ViewModel\PurchaseViewModel.cs" />
     <Compile Include="Views\InputValidationPage.xaml.cs">
       <DependentUpon>InputValidationPage.xaml</DependentUpon>
@@ -154,7 +155,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="InputValidation\InputValidationTemplates.xaml">
+    <Page Include="InputValidationToolkit\FormControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

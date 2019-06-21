@@ -8,26 +8,25 @@ using System.Linq;
 
 namespace InputValidationSample.InputValidationToolkit
 {
+    public interface IValidate
+    {
+        void Validate(string memberName, object value);
+    }
+
     /// <summary>
     /// Base class that implements INotifyPropertyChanged and INotifyDataErrorInfo boilerplate code
     /// </summary>
-    public class ValidationBase : INotifyPropertyChanged, INotifyDataErrorInfo
+    public class ValidationBase : INotifyPropertyChanged, INotifyDataErrorInfo, IValidate
     {
         public event PropertyChangedEventHandler PropertyChanged;
         public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
-
-        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         protected void SetValue<T>(ref T currentValue, T newValue, [CallerMemberName] string propertyName = "")
         {
             if (!EqualityComparer<T>.Default.Equals(currentValue, newValue))
             {
                 currentValue = newValue;
-                NotifyPropertyChanged(propertyName);
-                OnPropertyChanged(newValue, propertyName);
+                OnPropertyChanged(propertyName, newValue);
             }
         }
 
@@ -44,23 +43,10 @@ namespace InputValidationSample.InputValidationToolkit
             return _errors[propertyName];
         }
 
-        private void OnPropertyChanged(object value, string propertyName)
+        private void OnPropertyChanged(string propertyName, object value)
         {
-            ClearErrors(propertyName);
-            List<ValidationResult> results = new List<ValidationResult>();
-            bool result = Validator.TryValidateProperty(
-                value,
-                new ValidationContext(this, null, null)
-                {
-                    MemberName = propertyName
-                },
-                results
-                );
-
-            if (!result)
-            {
-                AddErrors(propertyName, results);
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            Validate(propertyName, value);
         }
 
         private void AddErrors(string propertyName, IEnumerable<ValidationResult> results)
@@ -81,6 +67,25 @@ namespace InputValidationSample.InputValidationToolkit
             {
                 errors.Clear();
                 ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+            }
+        }
+
+        public void Validate(string memberName, object value)
+        {
+            ClearErrors(memberName);
+            List<ValidationResult> results = new List<ValidationResult>();
+            bool result = Validator.TryValidateProperty(
+                value,
+                new ValidationContext(this, null, null)
+                {
+                    MemberName = memberName
+                },
+                results
+                );
+
+            if (!result)
+            {
+                AddErrors(memberName, results);
             }
         }
     }
