@@ -39,6 +39,7 @@ namespace InputValidationSample.InputValidationToolkit
 
     public static class IInputValidationControlExtensions
     {
+        // Gets the value of the InputProperty declared on the control so we an properly validate.
         public static bool TryGetInputPropertyValue(this IInputValidationControl ctrl, out object value)
         {
             Type controlType = ctrl.GetType();

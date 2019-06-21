@@ -120,6 +120,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CustomControl\PersonControl.xaml.cs">
+      <DependentUpon>PersonControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="InputValidationToolkit\FormControl.xaml.cs">
       <DependentUpon>FormControl.xaml</DependentUpon>
     </Compile>
@@ -155,6 +158,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="CustomControl\PersonControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="InputValidationToolkit\FormControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
