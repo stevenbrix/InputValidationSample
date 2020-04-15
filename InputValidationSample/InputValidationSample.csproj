@@ -19,6 +19,8 @@
     <WindowsXamlEnableOverview>true</WindowsXamlEnableOverview>
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
     <EnableTypeInfoReflection>false</EnableTypeInfoReflection>
+    <IsWinUIAlpha Condition="'$(IsWinUIAlpha)' == ''">true</IsWinUIAlpha>
+    <WindowsKitsPath Condition="'$(IsWinUIAlpha)' == 'true'">WinUI-Alpha-Projects-Don-t-Use-SDK-Xaml-Tools</WindowsKitsPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -121,13 +123,6 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="InputValidationToolkit\ValidationBase.cs" />
-    <Compile Include="InputValidation\ComboBox.cs" />
-    <Compile Include="InputValidation\NotInSpec_Microsoft.UI.Xaml.Controls.cs" />
-    <Compile Include="InputValidation\PasswordBox.cs" />
-    <Compile Include="InputValidation\TextBox.cs" />
-    <Compile Include="InputValidationToolkit\ValidationErrorsCollection.cs" />
-    <Compile Include="InputValidationToolkit\ValidationService.cs" />
-    <Compile Include="InputValidation\Microsoft.UI.Xaml.Controls.cs" />
     <Compile Include="ViewModel\PurchaseViewModel.cs" />
     <Compile Include="Views\InputValidationPage.xaml.cs">
       <DependentUpon>InputValidationPage.xaml</DependentUpon>
@@ -154,10 +149,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="InputValidation\InputValidationTemplates.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Views\InputValidationPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -165,7 +156,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.2.8</Version>
+      <Version>6.2.10</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.WinUI">
+      <Version>3.0.0-alpha.200210.0</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

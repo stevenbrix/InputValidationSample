@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections;
-using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.UI.Xaml.Data;
 using System.Linq;
 
 namespace InputValidationSample.InputValidationToolkit
@@ -39,7 +39,7 @@ namespace InputValidationSample.InputValidationToolkit
                 return _errors.Any();
             }
         }
-        public IEnumerable GetErrors(string propertyName)
+        public IEnumerable<object> GetErrors(string propertyName)
         {
             return _errors[propertyName];
         }

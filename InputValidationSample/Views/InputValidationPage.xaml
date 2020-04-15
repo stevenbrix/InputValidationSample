@@ -6,10 +6,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     d:DesignHeight="300"
     d:DesignWidth="400"
-    Loaded="UserControl_Loaded"
-    xmlns:iv="using:InputValidationSample.InputValidation"
+    xmlns:iv="using:InputValidationSample"
     mc:Ignorable="d">
-
     <Grid>
         <Rectangle
             x:Name="Backdrop"
@@ -37,27 +35,27 @@
                 HorizontalScrollMode="Disabled"
                 VerticalScrollBarVisibility="Auto"
                 VerticalScrollMode="Auto">
-                <StackPanel Margin="24,18,24,8">
+                <StackPanel Margin="24,18,24,8" x:DefaultBindMode="TwoWay">
                     <TextBlock
                         x:Uid="AddCreditOrDebitCardCaption"
                         Margin="0,0,0,16"
                         Text="Add a credit or debit card"
                         Style="{StaticResource SubtitleTextBlockStyle}"
                          />
-                    <iv:ValidateableTextBox
+                    <TextBox
                         x:Name="CardHolderNameField"
                         x:Uid="CardHolderNameField"
                         Margin="0,0,0,16"
                         HorizontalAlignment="Stretch"
-                        Text="{x:Bind ViewModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Text="{x:Bind ViewModel.Name}"
                         Header="Cardholder name"
                         PlaceholderText="Enter name"/>
-                    <iv:ValidateableTextBox
+                    <TextBox
                         x:Name="CardNumberField"
                         x:Uid="CardNumberField"
                         Margin="0,0,0,16"
                         HorizontalAlignment="Stretch"
-                        Text="{x:Bind ViewModel.CardNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Text="{x:Bind ViewModel.CardNumber}"
                         Header="Card number"
                         PlaceholderText="Enter card number"/>
                     <Grid Margin="0,0,0,16">
@@ -66,13 +64,13 @@
                             <ColumnDefinition Width="4" />
                             <ColumnDefinition />
                         </Grid.ColumnDefinitions>
-                        <iv:ValidatableComboBox
+                        <ComboBox
                             x:Uid="CreditCardExpirationDateMonthSelector"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Bottom"
                             Header="Expiration date"
                             PlaceholderText="MM"
-                            SelectedValue="{x:Bind ViewModel.CardExpirationMonth, Mode=TwoWay}">
+                            SelectedValue="{x:Bind ViewModel.CardExpirationMonth}">
                             <x:String>01</x:String>
                             <x:String>02</x:String>
                             <x:String>03</x:String>
@@ -85,8 +83,8 @@
                             <x:String>10</x:String>
                             <x:String>11</x:String>
                             <x:String>12</x:String>
-                        </iv:ValidatableComboBox>
-                        <iv:ValidatableComboBox
+                        </ComboBox>
+                        <ComboBox
                             x:Uid="CreditCardExpirationDateYearSelector"
                             Grid.Column="2"
                             HorizontalAlignment="Stretch"
@@ -94,7 +92,7 @@
                             IsEditable="True"
                             Header="Expiration date"
                             PlaceholderText="YYYY"
-                            SelectedValue="{x:Bind ViewModel.CardExpirationYear, Mode=TwoWay}">
+                            SelectedValue="{x:Bind ViewModel.CardExpirationYear}">
                             <x:String>2018</x:String>
                             <x:String>2019</x:String>
                             <x:String>2020</x:String>
@@ -104,7 +102,7 @@
                             <x:String>2024</x:String>
                             <x:String>2025</x:String>
                             <x:String>2026</x:String>
-                        </iv:ValidatableComboBox>
+                        </ComboBox>
                     </Grid>
                     <Grid Margin="0,0,0,24">
                         <Grid.ColumnDefinitions>
@@ -112,13 +110,13 @@
                             <ColumnDefinition Width="4" />
                             <ColumnDefinition />
                         </Grid.ColumnDefinitions>
-                        <iv:ValidateableTextBox
+                        <TextBox
                             x:Uid="CCVField"
                             x:Name="CCVField"
                             HorizontalAlignment="Stretch"
                             Header="CCV"
                             PlaceholderText="XXXX"
-                            Text="{x:Bind ViewModel.CCV, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            Text="{x:Bind ViewModel.CCV}" />
                         <HyperlinkButton
                             x:Uid="CCVExplanationPromptCaption"
                             Grid.Column="2"
@@ -126,20 +124,20 @@
                             VerticalAlignment="Bottom"
                             Content="What's this?"/>
                     </Grid>
-                    <iv:ValidateableTextBox
+                    <TextBox
                         x:Uid="AddressField"
                         x:Name="AddressField"
                         Margin="0,0,0,16"
                         HorizontalAlignment="Stretch"
-                        Text="{x:Bind ViewModel.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Text="{x:Bind ViewModel.Address}"
                         Header="Address"
                         PlaceholderText="Enter address"/>
-                    <iv:ValidateableTextBox
+                    <TextBox
                         x:Uid="CityField"
                         x:Name="CityField"
                         Margin="0,0,0,16"
                         HorizontalAlignment="Stretch"
-                        Text="{x:Bind ViewModel.City, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Text="{x:Bind ViewModel.City}"
                         Header="City"
                         PlaceholderText="Enter city"/>
                     <Grid Margin="0,0,0,24">
@@ -149,12 +147,12 @@
                             <ColumnDefinition />
                         </Grid.ColumnDefinitions>
                         <TextBox x:Uid="StateSelector" HorizontalAlignment="Stretch" Header="State" PlaceholderText="Enter state"/>
-                        <iv:ValidateableTextBox
+                        <TextBox
                             x:Name="ZipCodeField"
                             x:Uid="ZipCodeField"
                             Grid.Column="2"
                             HorizontalAlignment="Stretch"
-                            Text="{x:Bind ViewModel.Zip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Text="{x:Bind ViewModel.Zip}"
                             Header="ZIP"
                             PlaceholderText="Enter zip code"/>
                     </Grid>
